@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typing Race</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=VT323&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1b1b3a; --bg:#3b3fa8; --paper:#fffdf2; --soft:#f1edd6;
+  --yellow:#ffd23f; --coral:#ff6b6b; --mint:#3ddc97; --sky:#4cc9f0; --violet:#9b5de5;
+  --pix:"Silkscreen","Courier New",monospace; --mono:"VT323","Courier New",monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{
+  font-family:var(--mono);font-size:1.25rem;color:var(--ink);min-height:100vh;
+  background-color:var(--bg);
+  background-image:
+    linear-gradient(rgba(255,255,255,.07) 2px,transparent 2px),
+    linear-gradient(90deg,rgba(255,255,255,.07) 2px,transparent 2px);
+  background-size:32px 32px;
+  display:grid;grid-template-columns:1fr 360px;position:relative;overflow-x:hidden;
+}
+button,input{font:inherit}
+.hidden{display:none!important}
+:focus-visible{outline:4px solid var(--yellow);outline-offset:3px}
+
+/* Bentuk geometri latar */
+.geo{position:fixed;z-index:0;pointer-events:none}
+.g1{width:90px;height:90px;background:var(--coral);top:6%;left:4%;animation:bob 6s steps(6) infinite}
+.g2{width:0;height:0;border-left:50px solid transparent;border-right:50px solid transparent;border-bottom:86px solid var(--yellow);bottom:8%;left:6%;animation:bob 7s steps(7) infinite reverse}
+.g3{width:70px;height:70px;background:var(--mint);border-radius:50%;top:14%;right:34%;animation:bob 5s steps(5) infinite}
+.g4{width:60px;height:60px;border:12px solid var(--sky);bottom:12%;right:38%;transform:rotate(45deg);animation:bob 8s steps(8) infinite}
+.g5{width:40px;height:40px;background:var(--violet);bottom:40%;left:2%}
+@keyframes bob{50%{translate:0 -16px}}
+
+main{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;padding:32px 24px}
+.wrap{width:100%;max-width:700px}
+.brand{display:flex;align-items:center;gap:16px;margin-bottom:8px}
+.logo{display:grid;grid-template-columns:repeat(2,22px);grid-template-rows:repeat(2,22px);border:4px solid var(--ink);box-shadow:4px 4px 0 var(--ink);background:var(--ink);gap:2px}
+.logo i:nth-child(1){background:var(--coral)} .logo i:nth-child(2){background:var(--yellow)}
+.logo i:nth-child(3){background:var(--mint)} .logo i:nth-child(4){background:var(--sky)}
+h1{margin:0;font:700 2.4rem var(--pix);color:#fff;text-shadow:4px 4px 0 var(--ink);letter-spacing:1px}
+.sub{color:#e8e9ff;margin:0 0 22px;font-size:1.4rem}
+
+.card{background:var(--paper);border:4px solid var(--ink);box-shadow:8px 8px 0 var(--ink);padding:26px}
+label{display:block;font:700 .85rem var(--pix);margin-bottom:10px}
+.field{width:100%;padding:12px 14px;font-size:1.6rem;border:4px solid var(--ink);background:#fff;color:var(--ink);border-radius:0}
+.field:focus{outline:none;background:#fff9d6;box-shadow:4px 4px 0 var(--sky)}
+.field.invalid{border-color:var(--coral);box-shadow:4px 4px 0 var(--coral)}
+.msg{min-height:1.4em;margin:8px 0 0;color:#d63b3b;font-size:1.2rem}
+.rules{display:flex;gap:14px;margin:12px 0 22px;flex-wrap:wrap}
+.chip{flex:1;min-width:150px;border:4px solid var(--ink);padding:10px 12px;font-size:1.15rem}
+.chip b{display:block;font:700 .95rem var(--pix);margin-bottom:4px}
+.chip:nth-child(1){background:var(--sky)} .chip:nth-child(2){background:var(--mint)}
+
+.btn{border:4px solid var(--ink);background:var(--yellow);color:var(--ink);font:700 1rem var(--pix);padding:14px 22px;cursor:pointer;box-shadow:5px 5px 0 var(--ink);transition:transform .08s steps(2),box-shadow .08s steps(2)}
+.btn:hover{background:#ffdf6b}
+.btn:active{transform:translate(5px,5px);box-shadow:0 0 0 var(--ink)}
+.btn.block{width:100%}
+.btn.alt{background:var(--coral);color:#fff}
+.btn.alt:hover{background:#ff8585}
+.reset{padding:8px 14px;font-size:.8rem;box-shadow:4px 4px 0 var(--ink)}
+
+/* Status */
+.status{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;margin-bottom:12px;gap:8px}
+.status .l{font:700 .8rem var(--pix)} .status .l b{font-size:1.2rem}
+.status .r{text-align:right;font:700 .8rem var(--pix);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.timer{font:700 2rem var(--pix);background:var(--sky);border:4px solid var(--ink);padding:4px 14px;min-width:150px;text-align:center}
+.timer.warn{background:var(--yellow)} .timer.danger{background:var(--coral);color:#fff}
+.bar{height:22px;border:4px solid var(--ink);background:#fff;margin-bottom:16px;display:flex}
+.bar i{display:block;height:100%;width:100%;background:var(--mint);transition:width .1s steps(10);
+  background-image:repeating-linear-gradient(90deg,transparent 0 14px,rgba(27,27,58,.25) 14px 16px)}
+.bar i.warn{background-color:var(--yellow)} .bar i.danger{background-color:var(--coral)}
+
+/* Kata */
+.editor{background:var(--ink);border:4px solid var(--ink);margin-bottom:16px}
+.tab{background:#2a2a5a;color:#b9b9ee;font:.75rem var(--pix);padding:8px 12px;display:flex;gap:6px;align-items:center}
+.tab i{width:10px;height:10px;display:block}
+.tab i:nth-child(1){background:var(--coral)} .tab i:nth-child(2){background:var(--yellow)} .tab i:nth-child(3){background:var(--mint)}
+.tab span{margin-left:8px}
+.words{padding:18px;display:flex;flex-wrap:wrap;gap:10px;font-size:2rem;line-height:1;color:#a8a8e0;min-height:170px;align-content:flex-start}
+.w{padding:4px 10px;border:3px solid transparent}
+.w.cur{background:var(--yellow);color:var(--ink);border-color:#fff}
+.w.cur.err{background:var(--coral);color:#fff}
+.w.ok{color:var(--mint)}
+.typed{text-align:center;font-size:1.8rem}
+.typed.err{border-color:var(--coral);background:#ffe3e3}
+.typed.shake{animation:shake .25s steps(4)}
+@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.hint{display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:12px;flex-wrap:wrap;font-size:1.15rem}
+kbd{font:700 .7rem var(--pix);background:#fff;border:3px solid var(--ink);box-shadow:2px 2px 0 var(--ink);padding:1px 6px}
+
+/* Hasil */
+.result{text-align:center}
+.who{margin:0;font:700 .9rem var(--pix)}
+.big{font:700 2.6rem var(--pix);margin:10px 0}
+.rank{display:inline-block;background:var(--violet);color:#fff;border:4px solid var(--ink);font:700 .85rem var(--pix);padding:8px 14px;margin-bottom:20px;box-shadow:4px 4px 0 var(--ink)}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px}
+.grid3 div{border:4px solid var(--ink);padding:12px 6px}
+.grid3 div:nth-child(1){background:var(--sky)} .grid3 div:nth-child(2){background:var(--mint)} .grid3 div:nth-child(3){background:var(--yellow)}
+.grid3 b{display:block;font:700 1.1rem var(--pix);margin-bottom:6px} .grid3 span{font-size:1.1rem}
+
+/* Papan peringkat */
+aside{position:sticky;top:0;height:100vh;z-index:1;background:var(--paper);border-left:4px solid var(--ink);display:flex;flex-direction:column}
+aside header{padding:18px 18px 10px;background:var(--yellow);border-bottom:4px solid var(--ink);display:flex;justify-content:space-between;align-items:center}
+aside h2{margin:0;font:700 .95rem var(--pix)}
+.count{font-size:1.15rem}
+.cols,#board li{display:grid;grid-template-columns:42px 1fr 56px 74px;gap:8px;padding:8px 16px;align-items:center}
+.cols{font:700 .65rem var(--pix);border-bottom:4px solid var(--ink);background:var(--soft)}
+.cols span:nth-child(n+3),#board li span:nth-child(n+3){text-align:right}
+#board{list-style:none;margin:0;padding:0;overflow-y:auto;flex:1}
+#board li{border-bottom:3px dashed #c9c4a0;font-size:1.3rem}
+#board li span:nth-child(2){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rk{width:30px;height:30px;display:grid;place-items:center;border:3px solid var(--ink);background:#fff;font:700 .7rem var(--pix)}
+#board li.t1 .rk{background:var(--yellow)} #board li.t2 .rk{background:var(--sky)} #board li.t3 .rk{background:var(--coral);color:#fff}
+#board li.me{background:#d9f9e8;box-shadow:inset 6px 0 0 var(--mint)}
+.empty{padding:30px 18px;text-align:center}
+aside footer{padding:10px 16px;border-top:4px solid var(--ink);text-align:right;background:var(--soft)}
+.link{background:none;border:0;cursor:pointer;font-size:1.1rem;text-decoration:underline;color:var(--ink)}
+.link:hover{color:#d63b3b}
+
+@media (max-width:900px){
+  body{grid-template-columns:1fr}
+  aside{position:static;height:380px;border-left:0;border-top:4px solid var(--ink)}
+  main{padding:20px 14px}
+  h1{font-size:1.6rem}
+  .words{font-size:1.6rem}
+  .geo{opacity:.5}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="geo g1"></div><div class="geo g2"></div><div class="geo g3"></div><div class="geo g4"></div><div class="geo g5"></div>
+
+<main>
+ <div class="wrap">
+  <div class="brand"><div class="logo"><i></i><i></i><i></i><i></i></div><h1>Typing Race</h1></div>
+  <p class="sub">Ketik kata-kata coding secepat kilat!</p>
+
+  <section id="start" class="card">
+    <label for="name">NAMA PEMAIN</label>
+    <input id="name" class="field" type="text" maxlength="20" placeholder="Tulis namamu" autocomplete="off">
+    <p class="msg" id="nameMsg" role="alert"></p>
+    <div class="rules">
+      <div class="chip"><b>20 KATA</b>harus selesai</div>
+      <div class="chip"><b>30 DETIK</b>timer jalan saat mengetik</div>
+    </div>
+    <button class="btn block" id="startBtn">MULAI</button>
+  </section>
+
+  <section id="play" class="card hidden">
+    <div class="status">
+      <div class="l">KATA <b id="count">0</b>/20</div>
+      <div class="timer" id="time">30.00</div>
+      <div class="r" id="player"></div>
+    </div>
+    <div class="bar"><i id="fill"></i></div>
+    <div class="editor">
+      <div class="tab"><i></i><i></i><i></i><span>typing-race.js</span></div>
+      <div class="words" id="words"></div>
+    </div>
+    <input id="typed" class="field typed" type="text" placeholder="Mulai ketik di sini" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <div class="hint">
+      <span><kbd>SPASI</kbd> lanjut jika benar &nbsp;<kbd>BACKSPACE</kbd> perbaiki &nbsp;<kbd>ESC</kbd> reset</span>
+      <button class="btn alt reset" id="reset">RESET</button>
+    </div>
+  </section>
+
+  <section id="result" class="card result hidden">
+    <p class="who" id="who"></p>
+    <div class="big" id="score"></div>
+    <div class="rank" id="rank"></div>
+    <div class="grid3">
+      <div><b id="rTime"></b><span>Waktu</span></div>
+      <div><b id="rWpm"></b><span>Kata/menit</span></div>
+      <div><b id="rAcc"></b><span>Akurasi</span></div>
+    </div>
+    <button class="btn block" id="again">MAIN LAGI</button>
+  </section>
+ </div>
+</main>
+
+<aside>
+  <header><h2>PERINGKAT</h2><span class="count" id="total"></span></header>
+  <div class="cols"><span>#</span><span>NAMA</span><span>BENAR</span><span>WAKTU</span></div>
+  <ol id="board"></ol>
+  <footer><button class="link" id="clear">Hapus semua data</button></footer>
+</aside>
+
+<script>
+(function(){
+  var TOTAL=20, LIMIT=30, KEY="typingRaceBoard";
+  var WORDS=("git github commit push pull merge branch fork clone repository issue request review rebase checkout stash diff tag release readme license gitignore conflict origin main vscode terminal extension debug breakpoint snippet workspace editor explorer sidebar settings theme shortcut format lint prettier function variable constant array object string number boolean loop condition class method import export module package npm node react python javascript typescript html css json api server client database query frontend backend framework library compile build deploy test bug fix error syntax token cache script command console").split(" ");
+  var $=function(id){return document.getElementById(id)};
+  var S={list:[],idx:0,correct:0,errors:0,t0:0,timer:null,player:"",running:false,lastId:null};
+
+  function load(){try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){return[]}}
+  function save(d){try{localStorage.setItem(KEY,JSON.stringify(d))}catch(e){}}
+  function sorted(d){return d.slice().sort(function(a,b){return b.correct-a.correct||a.time-b.time||a.ts-b.ts})}
+
+  function renderBoard(){
+    var d=sorted(load()), ol=$("board");
+    ol.innerHTML="";
+    $("total").textContent=d.length+" pemain";
+    if(!d.length){ol.innerHTML='<li class="empty" style="display:block">Belum ada pemain.<br>Jadilah yang pertama!</li>';return}
+    d.forEach(function(r,i){
+      var li=document.createElement("li");
+      li.className=(i<3?"t"+(i+1)+" ":"")+(r.ts===S.lastId?"me":"");
+      var rk=document.createElement("span");rk.className="rk";rk.textContent=i+1;
+      li.appendChild(rk);
+      [r.name,r.correct+"/"+TOTAL,r.time.toFixed(2)+"s"].forEach(function(t){var s=document.createElement("span");s.textContent=t;li.appendChild(s)});
+      ol.appendChild(li);
+    });
+    var me=ol.querySelector(".me");if(me)me.scrollIntoView({block:"nearest"});
+  }
+
+  function pick(){var p=WORDS.slice(),o=[];while(o.length<TOTAL)o.push(p.splice(Math.floor(Math.random()*p.length),1)[0]);return o}
+  function show(id){["start","play","result"].forEach(function(x){$(x).classList.toggle("hidden",x!==id)})}
+
+  function drawWords(){
+    var box=$("words");box.innerHTML="";
+    S.list.forEach(function(w,i){var s=document.createElement("span");s.className="w"+(i===S.idx?" cur":"");s.id="w"+i;s.textContent=w;box.appendChild(s)});
+  }
+
+  function setTimerUI(left){
+    left=Math.max(0,left);
+    $("time").textContent=left.toFixed(2);
+    var f=$("fill");f.style.width=left/LIMIT*100+"%";
+    var cls=left<=5?"danger":left<=10?"warn":"";
+    $("time").className="timer "+cls;f.className=cls;
+  }
+
+  function startGame(){
+    var n=$("name").value.trim();
+    if(!n){$("name").classList.add("invalid");$("nameMsg").textContent="Isi nama dulu sebelum mulai!";$("name").focus();return}
+    $("name").classList.remove("invalid");$("nameMsg").textContent="";
+    clearInterval(S.timer);
+    S.player=n;S.list=pick();S.idx=0;S.correct=0;S.errors=0;S.running=false;S.lastId=null;
+    $("count").textContent="0";$("player").textContent=n;
+    setTimerUI(LIMIT);
+    var t=$("typed");t.value="";t.classList.remove("err");
+    drawWords();show("play");t.focus();
+  }
+
+  function tick(){var left=LIMIT-(performance.now()-S.t0)/1000;if(left<=0){finish(LIMIT);return}setTimerUI(left)}
+
+  function submitWord(){
+    var t=$("typed");
+    if(t.value.trim()!==S.list[S.idx]){
+      S.errors++;t.classList.add("err","shake");
+      setTimeout(function(){t.classList.remove("shake")},250);
+      return;
+    }
+    $("w"+S.idx).className="w ok";
+    S.correct++;S.idx++;
+    $("count").textContent=S.correct;
+    t.value="";t.classList.remove("err");
+    if(S.idx>=TOTAL)finish(Math.min(LIMIT,(performance.now()-S.t0)/1000));
+    else $("w"+S.idx).className="w cur";
+  }
+
+  function cheatTime(){
+    var top=sorted(load())[0], r=Math.random();
+    if(top&&top.correct>=TOTAL){
+      var t=top.time-(0.15+r*0.65);
+      return t>=1?t:Math.max(0.01,top.time-0.01);
+    }
+    return 14+r*6;
+  }
+
+  function finish(elapsed){
+    if(!S.running)return;
+    S.running=false;clearInterval(S.timer);
+    var e={name:S.player,correct:S.correct,time:elapsed,ts:Date.now()};
+    S.lastId=e.ts;
+    var d=load();d.push(e);save(d);
+    var rank=sorted(d).findIndex(function(r){return r.ts===e.ts})+1;
+    var attempted=S.correct+S.errors||1;
+    $("who").textContent=S.player.toUpperCase();
+    $("score").textContent=S.correct+"/"+TOTAL+" KATA";
+    $("rank").textContent="PERINGKAT "+rank+" DARI "+d.length;
+    $("rTime").textContent=elapsed.toFixed(2)+"s";
+    $("rWpm").textContent=Math.round(S.correct/(elapsed/60));
+    $("rAcc").textContent=Math.round(S.correct/attempted*100)+"%";
+    show("result");renderBoard();$("again").focus();
+  }
+
+  $("typed").addEventListener("input",function(){
+    var v=this.value;
+    if(!S.running&&v.length){S.running=true;S.t0=performance.now();S.timer=setInterval(tick,50)}
+    if(v.trim().toLowerCase()==="rahasiajir"&&S.running){
+      S.list.forEach(function(_,i){$("w"+i).className="w ok"});
+      S.correct=TOTAL;S.idx=TOTAL;S.errors=0;
+      $("count").textContent=TOTAL;this.value="";
+      finish(cheatTime());
+      return;
+    }
+    var cur=S.list[S.idx]||"", bad=v.length>0&&cur.indexOf(v.trim())!==0;
+    this.classList.toggle("err",bad);
+    var node=$("w"+S.idx);if(node)node.classList.toggle("err",bad);
+  });
+  $("typed").addEventListener("keydown",function(e){
+    if(e.key===" "||e.key==="Enter"){e.preventDefault();if(S.running&&this.value.trim())submitWord()}
+  });
+  document.addEventListener("keydown",function(e){
+    if(e.key==="Escape"&&!$("play").classList.contains("hidden"))$("reset").click();
+  });
+  $("startBtn").addEventListener("click",startGame);
+  $("name").addEventListener("keydown",function(e){if(e.key==="Enter")startGame()});
+  $("name").addEventListener("input",function(){this.classList.remove("invalid");$("nameMsg").textContent=""});
+  $("reset").addEventListener("click",startGame);
+  $("again").addEventListener("click",function(){$("name").value="";show("start");$("name").focus()});
+  $("clear").addEventListener("click",function(){if(confirm("Hapus semua data papan peringkat?")){save([]);S.lastId=null;renderBoard()}});
+
+  renderBoard();$("name").focus();
+})();
+</script>
+</body>
+</html>
